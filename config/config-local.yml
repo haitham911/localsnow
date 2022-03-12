@@ -63,3 +63,7 @@ jaeger:
   Host: localhost:6831
   ServiceName: snow
   LogSpans: false
+
+okta:
+  Host: https://dev-26771592.okta.com/api/v1/
+  ApiToken: SSWS 00Lp37JBcLB06zDtpimpaaZaAHiVn6avwEK-i8fPfx
