@@ -18,6 +18,7 @@ type Config struct {
 	Metrics  Metrics
 	Logger   Logger
 	Jaeger   Jaeger
+	Okta     Okta
 }
 
 // Server config struct
@@ -107,6 +108,11 @@ type Jaeger struct {
 	Host        string
 	ServiceName string
 	LogSpans    bool
+}
+
+type Okta struct {
+	Host     string
+	ApiToken string
 }
 
 // Load config file from given path
