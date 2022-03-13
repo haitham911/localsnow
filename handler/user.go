@@ -17,28 +17,31 @@ func (h *Handler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.
 	span, _ := opentracing.StartSpanFromContext(ctx, "users.LoginUser")
 	defer span.Finish()
 	h.logger.Info("login user req", req)
-	u, err := h.us.GetByEmail(req.GetUser().GetEmail())
+
+	user, err := auth.ValidatesUser(req.GetUser().GetEmail(), req.GetUser().GetPassword())
 	if err != nil {
-		msg := "invalid email or password"
-		err = fmt.Errorf("failed to login due to wrong email: %w", err)
+		msg := "Authentication error"
+		err := fmt.Errorf("failed to get user. %w", err)
 		h.logger.Errorf(msg, err)
-		return nil, status.Error(codes.InvalidArgument, msg)
+		return nil, status.Error(codes.Canceled, msg)
 	}
 
-	if !u.CheckPassword(req.GetUser().GetPassword()) {
-		h.logger.Errorf("failed to login due to receive wrong password: %s", u.Email)
-		return nil, status.Error(codes.InvalidArgument, "invalid email or password")
+	u, err := h.us.GetByEmail(user.Embedded.User.Login)
+	if u == nil {
+		u := model.User{
+			Username: user.Embedded.User.Login,
+			Email:    user.Embedded.User.Login,
+		}
+		err = h.us.Create(&u)
+		if err != nil {
+			msg := "internal server error"
+			err := fmt.Errorf("Failed to create user. %w", err)
+			h.logger.Errorf(msg, err)
+			return nil, status.Error(codes.Canceled, msg)
+		}
 	}
-
-	token, err := auth.GenerateToken(u.ID)
-	if err != nil {
-		msg := "internal server error"
-		err := fmt.Errorf("Failed to create token. %w", err)
-		h.logger.Errorf(msg, err)
-		return nil, status.Error(codes.Aborted, msg)
-	}
-
-	return &pb.UserResponse{User: u.ProtoUser(token)}, nil
+	session, err := auth.GetSessionToken(user.SessionToken)
+	return &pb.UserResponse{User: u.ProtoUser(session.Id)}, nil
 }
 
 // CreateUser registers a new user
@@ -91,31 +94,17 @@ func (h *Handler) CurrentUser(ctx context.Context, req *pb.Empty) (*pb.UserRespo
 	defer span.Finish()
 	h.logger.Infof("get current user req", req)
 
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		msg := "unauthenticated"
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
+		msg := "Authentication error"
+		err := fmt.Errorf("failed to get user. %w", err)
 		h.logger.Errorf(msg, err)
-		return nil, status.Errorf(codes.Unauthenticated, msg)
+		return nil, status.Error(codes.Canceled, msg)
 	}
 
-	u, err := h.us.GetByID(userID)
-	if err != nil {
-		msg := "user not found"
-		err = fmt.Errorf("token is valid but the user not found: %w", err)
-		h.logger.Errorf(msg, err)
-		return nil, status.Error(codes.NotFound, msg)
-	}
+	u, err := h.us.GetByEmail(session.Login)
 
-	token, err := auth.GenerateToken(u.ID)
-	if err != nil {
-		msg := "internal server error"
-		err := fmt.Errorf("Failed to create token. %w", err)
-		h.logger.Error(err)
-
-		return nil, status.Error(codes.Aborted, msg)
-	}
-
-	return &pb.UserResponse{User: u.ProtoUser(token)}, nil
+	return &pb.UserResponse{User: u.ProtoUser(session.Id)}, nil
 }
 
 // UpdateUser updates current user

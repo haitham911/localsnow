@@ -14,13 +14,13 @@ import (
 func (h *Handler) ShowProfile(ctx context.Context, req *pb.ShowProfileRequest) (*pb.ProfileResponse, error) {
 	h.logger.Infof("show profile req", req)
 
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 		return nil, status.Error(codes.NotFound, "user not found")
@@ -47,14 +47,13 @@ func (h *Handler) ShowProfile(ctx context.Context, req *pb.ShowProfileRequest) (
 func (h *Handler) FollowUser(ctx context.Context, req *pb.FollowRequest) (*pb.ProfileResponse, error) {
 	h.logger.Infof("follow user req", req)
 
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		err = fmt.Errorf("unauthenticated: %w", err)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 		return nil, status.Error(codes.NotFound, "user not found")
@@ -85,14 +84,13 @@ func (h *Handler) FollowUser(ctx context.Context, req *pb.FollowRequest) (*pb.Pr
 // UnfollowUser unfollow a user
 func (h *Handler) UnfollowUser(ctx context.Context, req *pb.UnfollowRequest) (*pb.ProfileResponse, error) {
 	h.logger.Infof("unfollow user req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		err = fmt.Errorf("unauthenticated: %w", err)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 		return nil, status.Error(codes.NotFound, "user not found")

@@ -15,13 +15,13 @@ import (
 // CreateArticle creates a article
 func (h *Handler) CreateArticle(ctx context.Context, req *pb.CreateAritcleRequest) (*pb.ArticleResponse, error) {
 	h.logger.Infof("create article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 
@@ -194,13 +194,13 @@ func (h *Handler) GetArticles(ctx context.Context, req *pb.GetArticlesRequest) (
 // GetFeedArticles gets recent articles from users current user follow
 func (h *Handler) GetFeedArticles(ctx context.Context, req *pb.GetFeedArticlesRequest) (*pb.ArticlesResponse, error) {
 	h.logger.Infof("get feed article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 
@@ -255,14 +255,13 @@ func (h *Handler) GetFeedArticles(ctx context.Context, req *pb.GetFeedArticlesRe
 // UpdateArticle updates an article
 func (h *Handler) UpdateArticle(ctx context.Context, req *pb.UpdateArticleRequest) (*pb.ArticleResponse, error) {
 	h.logger.Infof("update article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		msg := "unauthenticated"
-		h.logger.Errorf(msg, err)
-		return nil, status.Errorf(codes.Unauthenticated, msg)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
+		h.logger.Errorf("unauthenticated", err)
+		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		msg := "not user found"
 		err = fmt.Errorf("token is valid but the user not found: %w", err)
@@ -330,14 +329,13 @@ func (h *Handler) UpdateArticle(ctx context.Context, req *pb.UpdateArticleReques
 // DeleteArticle deletes an article
 func (h *Handler) DeleteArticle(ctx context.Context, req *pb.DeleteArticleRequest) (*pb.Empty, error) {
 	h.logger.Infof("delete article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		msg := "unauthenticated"
-		h.logger.Errorf(msg, err)
-		return nil, status.Errorf(codes.Unauthenticated, msg)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
+		h.logger.Errorf("unauthenticated", err)
+		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		msg := "not user found"
 		err = fmt.Errorf("token is valid but the user not found: %w", err)
@@ -379,14 +377,13 @@ func (h *Handler) DeleteArticle(ctx context.Context, req *pb.DeleteArticleReques
 // FavoriteArticle add an article to user favorites
 func (h *Handler) FavoriteArticle(ctx context.Context, req *pb.FavoriteArticleRequest) (*pb.ArticleResponse, error) {
 	h.logger.Infof("favorite article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		msg := "unauthenticated"
-		h.logger.Errorf(msg, err)
-		return nil, status.Errorf(codes.Unauthenticated, msg)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
+		h.logger.Errorf("unauthenticated", err)
+		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		msg := "not user found"
 		err = fmt.Errorf("token is valid but the user not found: %w", err)
@@ -433,14 +430,13 @@ func (h *Handler) FavoriteArticle(ctx context.Context, req *pb.FavoriteArticleRe
 // UnfavoriteArticle removes an article from user favorites
 func (h *Handler) UnfavoriteArticle(ctx context.Context, req *pb.UnfavoriteArticleRequest) (*pb.ArticleResponse, error) {
 	h.logger.Infof("unfavorite article req", req)
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
-		msg := "unauthenticated"
-		h.logger.Errorf(msg, err)
-		return nil, status.Errorf(codes.Unauthenticated, msg)
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
+		h.logger.Errorf("unauthenticated", err)
+		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		msg := "not user found"
 		err = fmt.Errorf("token is valid but the user not found: %w", err)
