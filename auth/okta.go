@@ -160,16 +160,20 @@ func GetSessionToken(sessionToken string) (*SessionRes, error) {
 func CheckSessionId(ctx context.Context) (*SessionRes, error) {
 
 	sessionId, err := grpc_auth.AuthFromMD(ctx, "Token")
+
 	req, err := http.NewRequest("GET", getOktaDomain()+"sessions/"+sessionId, nil)
-	if err != nil {
-		log.Fatal(err)
+	if err != nil || len(sessionId) == 0 {
+		return nil, err
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", getOktaApiToken())
+
 	res, err := http.DefaultClient.Do(req)
 	if err != nil || res.Status == "401" {
 		return nil, err
 	}
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return nil, err

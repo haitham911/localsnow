@@ -17,14 +17,13 @@ func (h *Handler) CreateComment(ctx context.Context, req *pb.CreateCommentReques
 	h.logger.Infof("Create comment | req: %+v", req)
 
 	// get current user
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
-
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 		return nil, status.Error(codes.NotFound, "user not found")
@@ -134,13 +133,13 @@ func (h *Handler) DeleteComment(ctx context.Context, req *pb.DeleteCommentReques
 	h.logger.Infof("Delete comment | req: %+v", req)
 
 	// get current user
-	userID, err := auth.GetUserID(ctx)
-	if err != nil {
+	session, err := auth.CheckSessionId(ctx)
+	if err != nil || session == nil {
 		h.logger.Errorf("unauthenticated", err)
 		return nil, status.Errorf(codes.Unauthenticated, "unauthenticated")
 	}
 
-	currentUser, err := h.us.GetByID(userID)
+	currentUser, err := h.us.GetByEmail(session.Login)
 	if err != nil {
 		h.logger.Errorf("current user not found", err)
 		return nil, status.Error(codes.NotFound, "user not found")
